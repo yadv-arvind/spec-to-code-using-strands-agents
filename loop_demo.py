@@ -8,11 +8,13 @@ from strands.models import BedrockModel
 env_file = Path(__file__).parent / ".env.local"
 load_dotenv(env_file)
 
-model = BedrockModel(
-    model_id=os.getenv("BEDROCK_INFERENCE_PROFILE_ARN"),
-    region_name="us-east-1",
-)
+inference_profile_arn = os.getenv("BEDROCK_INFERENCE_PROFILE_ARN")
 
+model = BedrockModel(
+    model_id=inference_profile_arn,
+    region_name="us-east-1",
+    temperature=0.3,
+)
 agent = Agent(model=model, system_prompt="You are terse. Answer in one sentence.")
 
 r1 = agent("My favorite language is Python.")

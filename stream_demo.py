@@ -1,17 +1,17 @@
 import asyncio
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 from strands import Agent
 from strands.models import BedrockModel
 
-# Load from .env.local
-env_file = Path(__file__).parent / ".env.local"
-load_dotenv(env_file)
+# Read inference profile ARN from environment variable
+inference_profile_arn = os.getenv("BEDROCK_INFERENCE_PROFILE_ARN")
+if not inference_profile_arn:
+    raise ValueError("BEDROCK_INFERENCE_PROFILE_ARN environment variable not set. Please export it before running.")
 
 model = BedrockModel(
-    model_id=os.getenv("BEDROCK_INFERENCE_PROFILE_ARN"),
+    model_id=inference_profile_arn,
     region_name="us-east-1",
+    temperature=0.3,
 )
 
 agent = Agent(model=model, system_prompt="You are a helpful assistant.")
