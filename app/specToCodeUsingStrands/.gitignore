@@ -1,7 +1,5 @@
-# Environment
-.env.local
+# Environment variables
 .env
-.env.*.local
 
 # Python
 __pycache__/
@@ -26,7 +24,7 @@ wheels/
 *.egg
 
 # Virtual environments
-.venv
+.venv/
 venv/
 ENV/
 env/
@@ -38,16 +36,6 @@ env/
 *.swo
 *~
 
-# Output/Artifacts
-sandbox/
-output/
-*.log
-
 # OS
 .DS_Store
 Thumbs.db
-
-# Tool runtime artifacts
-repl_state/
-errors/
-.pytest_cache/
