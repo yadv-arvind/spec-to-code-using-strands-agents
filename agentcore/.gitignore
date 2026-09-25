@@ -11,5 +11,7 @@ cdk/node_modules/
 # Ephemeral Staging
 .cache/*
 
-# Exception: Commit the State
-!.cli/deployed-state.json
+# The scaffold commits this by default, but it records runtime and role ARNs
+# that embed the AWS account id. agentcore deploy regenerates it, and
+# cdk/bin/cdk.ts tolerates its absence.
+# !.cli/deployed-state.json
