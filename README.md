@@ -98,6 +98,7 @@ Two consequences worth internalising. The execution role, not your user credenti
 - [Test It Locally](#test-it-locally)
 - [Deep Dives](#deep-dives)
 - [Build It](#build-it)
+- [Observability](#observability)
 
 ## Project Overview & Features
 
@@ -236,6 +237,38 @@ Logs:
 
 ```bash
 agentcore logs
+```
+
+## Observability
+
+AgentCore Runtime auto-instruments the deployed agent with OpenTelemetry — there's no tracing code in this repo. Once CloudWatch Transaction Search is enabled for the account and region, each invocation shows up in the CloudWatch **GenAI Observability** dashboard under the Bedrock AgentCore tab.
+
+![CloudWatch GenAI Observability trace for a single spec-to-code invocation](docs/trace-genai-observability.png)
+
+One real invocation: **14 spans, 11.56 s, 3,697 tokens, $0.003**, no errors or throttles. The trajectory is the agent loop made visible:
+
+```
+POST /invocations → invoke_agent → execute_event_loop_cycle ×3 → chat ×3
+                                                               → file_write ×2
+                                                               → run_pytest ×1
+```
+
+Three things this makes concrete:
+
+**The loop shape matches the design.** Three event-loop cycles, three model calls, two file writes and one test run — write the implementation, write the tests, run them. That's the happy path, and it costs three turns of the `limits={"turns": 4}` budget, leaving exactly one spare. A spec that fails its first test run needs more.
+
+**Tools are free; inference is everything.** Both `file_write` calls together took **0.04 s** against **11.40 s** total. Over 99% of wall-clock time is the model. Optimising tool code would buy nothing here — the only real levers are fewer model calls or a cheaper model.
+
+**Token cost is dominated by re-sent context.** 3,697 tokens to produce a three-line function, with a single `chat` span showing `722 → 216`. The system prompt plus the growing transcript is re-sent every cycle. That's why each request now builds a fresh agent rather than reusing one — a cached agent would carry the previous spec's transcript into this number too.
+
+From the terminal instead of the console:
+
+```bash
+agentcore traces list
+```
+
+```bash
+agentcore traces get <trace-id>
 ```
 
 ## License
