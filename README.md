@@ -40,8 +40,7 @@ Two ways to run the identical agent:
 
 ![Architecture of the spec-to-code agent on AWS Bedrock AgentCore Runtime](docs/architecture.svg)
 
-<details>
-<summary>Same diagram as editable Mermaid</summary>
+Same architecture as editable Mermaid:
 
 ```mermaid
 flowchart TD
@@ -78,8 +77,6 @@ flowchart TD
     EP -->|stream| CLI
     AGENT -.-> CW
 ```
-
-</details>
 
 **The request lifecycle**
 
