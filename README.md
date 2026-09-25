@@ -133,11 +133,6 @@ Official docs for each concept this project uses.
 - [aws/agentcore-cli](https://github.com/aws/agentcore-cli) — CLI source; check here when docs and flags diverge
 - [awslabs/agentcore-samples](https://github.com/awslabs/agentcore-samples) — the Strands + Runtime reference this project's `main.py` follows
 
-**Video**
-
-- [Amazon Bedrock AgentCore Deep dive series: Runtime](https://www.youtube.com/watch?v=wizEw5a4gvM) — AWS Events
-- [AWS Bedrock AgentCore: Complete Beginners Guide](https://www.youtube.com/watch?v=y1slHK9R_Vg) — Johnny Chivers
-
 > The AgentCore deployment CLI changed recently. The deprecated pip `bedrock-agentcore-starter-toolkit` used `agentcore configure` / `agentcore launch`; the current npm `@aws/agentcore` uses `create` / `dev` / `deploy` / `invoke`. Older tutorials and videos may show the old commands.
 
 ## Build It
