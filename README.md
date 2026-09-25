@@ -36,9 +36,60 @@ Two ways to run the identical agent:
 | Sandbox | `./sandbox/` | `/tmp/sandbox/` — `/var/task` is read-only |
 | Invoke | web UI or a Python call | `agentcore invoke` or boto3 |
 
+### How it runs on AgentCore Runtime
+
+```mermaid
+flowchart TD
+    subgraph LOCAL["Your machine"]
+        CLI["agentcore invoke<br/>or boto3 InvokeAgentRuntime"]
+    end
+
+    subgraph AWS["AWS · us-east-1"]
+        EP["Bedrock AgentCore Runtime<br/>POST /invocations<br/>SigV4 · runtimeSessionId routes the call"]
+
+        subgraph VM["microVM · networkMode PUBLIC"]
+            APP["BedrockAgentCoreApp<br/>uvicorn · /invocations + /ping"]
+            AGENT["main.py @app.entrypoint<br/>Strands agent loop"]
+            RO["/var/task · read-only<br/>main.py + flattened deps"]
+            RW["/tmp/sandbox · writable<br/>generated code + tests"]
+            PYT["subprocess<br/>sys.executable -m pytest"]
+        end
+
+        BR["Amazon Bedrock<br/>ConverseStream<br/>us.amazon.nova-pro-v1:0"]
+        CW["CloudWatch Logs<br/>+ OTLP traces"]
+    end
+
+    CLI -->|HTTPS| EP
+    EP --> APP
+    APP --> AGENT
+    RO -.->|imported at cold start| APP
+    AGENT -->|model call| BR
+    BR -->|"text + tool-use blocks"| AGENT
+    AGENT -->|file_write| RW
+    AGENT -->|run_pytest| PYT
+    PYT -->|reads| RW
+    PYT -->|"stdout/stderr back into the loop"| AGENT
+    AGENT -->|"SSE: data chunks"| EP
+    EP -->|stream| CLI
+    AGENT -.-> CW
+```
+
+**The request lifecycle**
+
+1. Your client signs an HTTPS `POST` with SigV4 and sends `{"prompt": "..."}` plus a `runtimeSessionId` of at least 33 characters. `agentcore invoke` and boto3's `InvokeAgentRuntime` both do this.
+2. Runtime routes the call to a microVM. The session ID gives you affinity — the same ID reaches the same VM, a new one may get a fresh VM.
+3. `BedrockAgentCoreApp` is a FastAPI app under uvicorn. It supplies the two routes the Runtime contract requires, `POST /invocations` and `GET /ping`, so you never write them yourself.
+4. `@app.entrypoint` receives the payload, and the Strands loop starts: call the model, execute any requested tool, feed the result back, repeat until the model asks for no more tools or the `turns` cap trips.
+5. Model calls leave the container outbound to Bedrock. **Tools execute inside the container** — `file_write` and `run_pytest` are local operations, not service calls.
+6. `/var/task` holds your code and dependencies flattened together, and is mounted **read-only**, which is why the sandbox resolves to `/tmp`. It also means `pytest` lives on the app's import path rather than on `PATH`, so `run_pytest` invokes `sys.executable -m pytest`.
+7. Output streams back as SSE `data:` chunks — the `event["data"]` strings `main.py` yields.
+
+Two consequences worth internalising. The execution role, not your user credentials, is what calls Bedrock from inside the container, so `bedrock:InvokeModel` has to be on that role. And `/tmp/sandbox` is ephemeral and per-session: generated code never returns to your machine and disappears when the VM is recycled. To retrieve it you have to pin the session — `agentcore exec --session-id <id> "ls /tmp/sandbox"`.
+
 ## Table of Contents
 
 - [Architecture](#architecture)
+  - [How it runs on AgentCore Runtime](#how-it-runs-on-agentcore-runtime)
 - [Project Overview & Features](#project-overview--features)
 - [Test It Locally](#test-it-locally)
 - [Deep Dives](#deep-dives)
