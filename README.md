@@ -31,7 +31,7 @@ Two ways to run the identical agent:
 
 | | Local | Deployed |
 |---|---|---|
-| Entry | `agents/get_agent()` | `main.py` `@app.entrypoint` |
+| Entry | `agents/create_agent()` | `main.py` `@app.entrypoint` |
 | Server | `agentcore dev` (web chat UI) | AgentCore Runtime, CodeZip |
 | Sandbox | `./sandbox/` | `/tmp/sandbox/` — `/var/task` is read-only |
 | Invoke | web UI or a Python call | `agentcore invoke` or boto3 |
@@ -140,8 +140,8 @@ Run the agent directly, no server:
 
 ```bash
 cd app/specToCodeUsingStrands && python3 -c "
-from agents import get_agent
-r = get_agent()('Spec: write a function slugify(text: str) -> str that lowercases text, replaces spaces with hyphens, and strips non-alphanumeric characters. Cover: mixed case, punctuation, multiple spaces.')
+from agents import create_agent
+r = create_agent()('Spec: write a function slugify(text: str) -> str that lowercases text, replaces spaces with hyphens, and strips non-alphanumeric characters. Cover: mixed case, punctuation, multiple spaces.')
 print(r.message)
 "
 ```
@@ -168,7 +168,7 @@ Official docs for each concept this project uses.
 |---|---|---|
 | First agent, `BedrockModel` | `model/load.py` | [Python quickstart](https://strandsagents.com/docs/user-guide/sdk/quickstart/python/) · [Bedrock provider](https://strandsagents.com/docs/user-guide/sdk/model-providers/amazon-bedrock/) |
 | Agent loop | why the loop stops with no tool call | [Agent loop](https://strandsagents.com/docs/user-guide/sdk/agents/agent-loop/) |
-| State across turns | `get_agent()` caching one instance | [State](https://strandsagents.com/docs/user-guide/sdk/agents/state/) |
+| State across turns | history accumulates on one `Agent` | [State](https://strandsagents.com/docs/user-guide/sdk/agents/state/) |
 | Streaming | `main.py` yielding `event["data"]` | [Streaming](https://strandsagents.com/docs/user-guide/sdk/streaming/) |
 | Built-in tools | `file_write` | [Tools](https://strandsagents.com/docs/user-guide/sdk/tools/) · [tools repo](https://github.com/strands-agents/tools) |
 | Custom `@tool` | `tools/pytest_tools.py` | [Custom tools](https://strandsagents.com/docs/user-guide/sdk/tools/custom-tools/) |

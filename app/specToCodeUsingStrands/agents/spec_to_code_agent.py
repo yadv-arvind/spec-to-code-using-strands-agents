@@ -26,15 +26,9 @@ For every spec:
 5. Never claim tests pass without having just run them this turn.
 """
 
-_agent = None
-
-
-def get_agent() -> Agent:
-    global _agent
-    if _agent is None:
-        _agent = Agent(
-            model=load_model(),
-            system_prompt=SYSTEM_PROMPT,
-            tools=[file_write, run_pytest],
-        )
-    return _agent
+def create_agent() -> Agent:
+    return Agent(
+        model=load_model(),
+        system_prompt=SYSTEM_PROMPT,
+        tools=[file_write, run_pytest],
+    )
