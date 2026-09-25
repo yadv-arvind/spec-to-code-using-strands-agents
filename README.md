@@ -38,41 +38,7 @@ Two ways to run the identical agent:
 
 ### How it runs on AgentCore Runtime
 
-```mermaid
-flowchart TD
-    subgraph LOCAL["Your machine"]
-        CLI["agentcore invoke<br/>or boto3 InvokeAgentRuntime"]
-    end
-
-    subgraph AWS["AWS · us-east-1"]
-        EP["Bedrock AgentCore Runtime<br/>POST /invocations<br/>SigV4 · runtimeSessionId routes the call"]
-
-        subgraph VM["microVM · networkMode PUBLIC"]
-            APP["BedrockAgentCoreApp<br/>uvicorn · /invocations + /ping"]
-            AGENT["main.py @app.entrypoint<br/>Strands agent loop"]
-            RO["/var/task · read-only<br/>main.py + flattened deps"]
-            RW["/tmp/sandbox · writable<br/>generated code + tests"]
-            PYT["subprocess<br/>sys.executable -m pytest"]
-        end
-
-        BR["Amazon Bedrock<br/>ConverseStream<br/>us.amazon.nova-pro-v1:0"]
-        CW["CloudWatch Logs<br/>+ OTLP traces"]
-    end
-
-    CLI -->|HTTPS| EP
-    EP --> APP
-    APP --> AGENT
-    RO -.->|imported at cold start| APP
-    AGENT -->|model call| BR
-    BR -->|"text + tool-use blocks"| AGENT
-    AGENT -->|file_write| RW
-    AGENT -->|run_pytest| PYT
-    PYT -->|reads| RW
-    PYT -->|"stdout/stderr back into the loop"| AGENT
-    AGENT -->|"SSE: data chunks"| EP
-    EP -->|stream| CLI
-    AGENT -.-> CW
-```
+![Architecture of the spec-to-code agent on AWS Bedrock AgentCore Runtime](docs/architecture.svg)
 
 **The request lifecycle**
 
